@@ -1,17 +1,16 @@
-/*This source code copyrighted by Lazy Foo' Productions (2004-2015)
-and may not be redistributed without written permission.*/
-
-//Using SDL, SDL_image, standard math, and strings
+//Using SDL, SDL_image, standard in/out, and strings
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <string>
+#include <iostream>
+
+using namespace std;
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
-
-
+const int FRAME_DELAY = 20;
 
 //enumerate possible key presses
 enum KeyPressSurfaces
@@ -23,12 +22,6 @@ enum KeyPressSurfaces
 	KEY_PRESS_SURFACE_RIGHT,
 	KEY_PRESS_SURFACE_TOTAL
 };
-
-/*The images that correspond to a keypress
-SDL_Surface* gKeyPressSurfaces[ KEY_PRESS_SURFACE_TOTAL ];
-
-//Current displayed image
-SDL_Surface* gCurrentSurface = NULL;*/
 
 //Texture wrapper class
 class LTexture
@@ -78,7 +71,7 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 
 //Scene sprites
-SDL_Rect gSpriteClips[ 4 ];
+SDL_Rect gSpriteClips[4][4];
 LTexture gSpriteSheetTexture;
 
 
@@ -152,17 +145,18 @@ void LTexture::free()
 void LTexture::render( int x, int y, SDL_Rect* clip )
 {
 	//Set rendering space and render to screen
-	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+	SDL_Rect bunnySprite = { x, y, mWidth, mHeight };
+	//SDL_RenderSetScale(gRenderer, 2,2);
 
 	//Set clip rendering dimensions
 	if( clip != NULL )
 	{
-		renderQuad.w = clip->w;
-		renderQuad.h = clip->h;
+		bunnySprite.w = clip->w;
+		bunnySprite.h = clip->h;
 	}
 
 	//Render to screen
-	SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
+	SDL_RenderCopy( gRenderer, mTexture, clip, &bunnySprite );
 }
 
 int LTexture::getWidth()
@@ -195,7 +189,7 @@ bool init()
 		}
 
 		//Create window
-		gWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+		gWindow = SDL_CreateWindow( "Bunny Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
 		if( gWindow == NULL )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -235,40 +229,69 @@ bool loadMedia()
 	bool success = true;
 
 	//Load sprite sheet texture
-	if( !gSpriteSheetTexture.loadFromFile( "arrows.png" ) )
+	if( !gSpriteSheetTexture.loadFromFile( "bunnySpriteMap.png" ) )
 	{
 		printf( "Failed to load sprite sheet texture!\n" );
 		success = false;
 	}
 	else
 	{
-		//Set top left sprite (Move Up)
-		gSpriteClips[ 0 ].x =   0;
-		gSpriteClips[ 0 ].y =   0;
-		gSpriteClips[ 0 ].w = 100;
-		gSpriteClips[ 0 ].h = 100;
-
-		//Set top right sprite (Move Down)
-		gSpriteClips[ 1 ].x = 100;
-		gSpriteClips[ 1 ].y =   0;
-		gSpriteClips[ 1 ].w = 100;
-		gSpriteClips[ 1 ].h = 100;
-		
-		//Set bottom left sprite (Move Left)
-		gSpriteClips[ 2 ].x =   0;
-		gSpriteClips[ 2 ].y = 100;
-		gSpriteClips[ 2 ].w = 100;
-		gSpriteClips[ 2 ].h = 100;
-
-		//Set bottom right sprite (Move Right)
-		gSpriteClips[ 3 ].x = 100;
-		gSpriteClips[ 3 ].y = 100;
-		gSpriteClips[ 3 ].w = 100;
-		gSpriteClips[ 3 ].h = 100;
+	//--------Set Down sprite--------//
+		//Stationary F1
+		gSpriteClips[0][0].x = 0;
+		gSpriteClips[0][0].y = 0;
+		gSpriteClips[0][0].w = 72;
+		gSpriteClips[0][0].h = 172;
+		//Move F1
+		/*gSpriteClips[0][1].x = 74;
+		gSpriteClips[0][1].y = 0;
+		gSpriteClips[0][1].w = 72;
+		gSpriteClips[0][1].h = 192;
+		//Move F2
+		gSpriteClips[0][2].x = 74;
+		gSpriteClips[0][2].y = 0;
+		gSpriteClips[0][2].w = 72;
+		gSpriteClips[0][2].h = 192;
+		//Move F3
+		gSpriteClips[0][3].x = 74;
+		gSpriteClips[0][3].y = 0;
+		gSpriteClips[0][3].w = 72;
+		gSpriteClips[0][3].h = 192;*/
+	
+	//--------Set Down sprite--------//
+		//Stationary
+		gSpriteClips[1][0].x = 0;
+		gSpriteClips[1][0].y = 174;
+		gSpriteClips[1][0].w = 72;
+		gSpriteClips[1][0].h = 172;
+	
+	
+	//--------Set Left sprite--------//	
+		//Stationary
+		gSpriteClips[2][0].x = 0;
+		gSpriteClips[2][0].y = 348;
+		gSpriteClips[2][0].w = 72;
+		gSpriteClips[2][0].h = 172;
+	
+	
+	//--------Set Right sprite--------//
+		//Stationary
+		gSpriteClips[3][0].x = 0;
+		gSpriteClips[3][0].y = 522;
+		gSpriteClips[3][0].w = 72;
+		gSpriteClips[3][0].h = 172;
 	}
 
 	return success;
 }
+
+class Sprite
+{
+	public:
+		Sprite();
+};
+
+
 
 void close()
 {
@@ -309,19 +332,18 @@ int main( int argc, char* args[] )
 			SDL_Event e;
 			
 			//Set position to 50,50 and direction to up
-			int pAction = 4;
+			bool pAction[4] = {false};
 			int pX = 50;
 			int pY = 50;
 			int pDir = 0;
+			int pAnimFrame = 0;
 			
 			//Render arrow for first time
-			gSpriteSheetTexture.render( pX, pY, &gSpriteClips[ pDir ] );
+			gSpriteSheetTexture.render( pX, pY, &gSpriteClips[pDir][pAnimFrame] );
 			
 	/*--------------------------------Main Game Loop--------------------------------*/
 			while( !quit )
-			{
-				
-				
+			{				
 				//Handle events on queue
 				while( SDL_PollEvent( &e ) != 0 )
 				{
@@ -332,68 +354,103 @@ int main( int argc, char* args[] )
 							quit = true;
 						}
 						//User presses a key
-						else if( e.type == SDL_KEYDOWN )
+						else if( e.type == SDL_KEYDOWN || SDL_KEYUP)
 						{
 							//Select surfaces based on key press
 							switch( e.key.keysym.sym )
 							{
-								case SDLK_UP:
-									pAction=0;
-								break;
-
 								case SDLK_DOWN:
-									pAction=1;
+									if(e.type == SDL_KEYDOWN)
+									{
+										pAction[0]=true;
+									}else if(e.type == SDL_KEYUP)
+									{
+										pAction[0]=false;
+									}
 								break;
-
+								case SDLK_UP:
+									if(e.type == SDL_KEYDOWN)
+									{
+										pAction[1]=true;
+									}else if(e.type == SDL_KEYUP)
+									{
+										pAction[1]=false;
+									}
+								break;
 								case SDLK_LEFT:
-									pAction=2;
+									if(e.type == SDL_KEYDOWN)
+									{
+										pAction[2]=true;
+									}else if(e.type == SDL_KEYUP)
+									{
+										pAction[2]=false;
+									}
 								break;
-
 								case SDLK_RIGHT:
-									pAction=3;
+									if(e.type == SDL_KEYDOWN)
+									{
+										pAction[3]=true;
+									}else if(e.type == SDL_KEYUP)
+									{
+										pAction[3]=false;
+									}
 								break;
-
 								default:
 								break;
 							}
 						}
-						else if( e.type == SDL_KEYUP )
-						{
-							pAction=4;
-						}
 					}
-				}
+				}				
 				
-				
-				switch(pAction)
+				if(pAction[0]==true)
 				{
-					case 0:
-						pY = pY - 3;
-						pDir = 0;
-					break;
-					case 1:
+					if(pAction[2]==true||pAction[3]==true)
+					{
 						pY = pY + 3;
-						pDir = 1;
-					break;
-					case 2:
+					}else{
+						pY = pY + 4;
+					}
+					pDir = 0;
+				}
+				if(pAction[1]==true)
+				{
+					if(pAction[2]==true||pAction[3]==true)
+					{
+						pY = pY - 3;
+					}else{
+						pY = pY - 4;
+					}
+					pDir = 1;
+				}
+				if(pAction[2]==true)
+				{
+					if(pAction[0]==true||pAction[1]==true)
+					{
 						pX = pX - 3;
-						pDir = 2;
-					break;
-					case 3:
+					}else{
+						pX = pX - 4;
+					}
+					pDir = 2;
+				}
+				if(pAction[3]==true)
+				{
+					if(pAction[0]==true||pAction[1]==true)
+					{
 						pX = pX + 3;
-						pDir = 3;
-					break;
-					case 4:
-					break;
+					}else{
+						pX = pX + 4;
+					}
+					pDir = 3;
 				}
 
 				//Clear screen
-				SDL_SetRenderDrawColor( gRenderer, 255, 255, 255, 0xFF );
+				SDL_SetRenderDrawColor( gRenderer, 0, 255, 0, 0xFF );
 				SDL_RenderClear( gRenderer );
 				//Render Sprite
-				gSpriteSheetTexture.render( pX, pY, &gSpriteClips[ pDir ] );
+				gSpriteSheetTexture.render( pX, pY, &gSpriteClips[pDir][pAnimFrame] );
 				//Update screen
 				SDL_RenderPresent( gRenderer );
+				SDL_Delay(FRAME_DELAY);
 			}
 			
 	/*--------------------------------Main Game Loop--------------------------------*/		
