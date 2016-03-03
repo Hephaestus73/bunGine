@@ -1,0 +1,63 @@
+Directory Hierarchy
+
+/
+|executable
+|----/libs
+	|----entities
+		|----player
+		|----enemies
+		|----projectiles
+		|----items
+	|----map
+	|----story
+	|----SDL
+			|----sdl files
+|----/imgs
+	|----player
+	|----enemies
+	|----items
+
+
+
+
+
+
+Game Logic
+
+	<--------MGL-------->
+
+	playertests
+		-collision
+		-item
+		-trigger
+		
+	input
+		-move / boundary
+		-fire
+
+	entity
+		-behaviour
+		-collision
+
+
+
+	<-------/MGL-------->
+
+
+
+	<--------Story-------->
+	Load story db
+	Pick elements:
+		End/Goal
+		Start
+		Setting
+	
+	<-------/Story-------->
+
+
+	<--------Maps-------->
+		type
+		time
+		size
+		
+	<-------/Maps-------->

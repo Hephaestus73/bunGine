@@ -1,19 +1,14 @@
 //Using SDL, SDL_image, standard in/out, and strings
-#include "libs/SDL/SDL.h"
+#include <SDL2/SDL.h>
 #include "libs/SDL/SDL_image.h"
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <math.h>
-#include <time.h>
-
 using namespace std;
 //Screen dimension constants
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 800;
-const int MAX_PROJECTILES = 50;
-const int MAX_ENEMIES = 50;
-const int MAX_PLAYERS = 2;
+const int SCREEN_WIDTH = 1024;
+const int SCREEN_HEIGHT = 768;
+const int MAX_PROJECTILES = 3;
 const int FRAME_DELAY = 15; //in ms
 
 
@@ -21,7 +16,6 @@ const int FRAME_DELAY = 15; //in ms
 #include "libs/playerSprite.h"
 #include "libs/enemySprite.h"
 #include "libs/projectileSprite.h"
-#include "libs/HUD.h"
 
 
 
@@ -37,10 +31,17 @@ enum KeyPressSurfaces
 };
 
 
+//Starts up SDL and creates window
+bool init();
 
-bool init();			//Starts up SDL and creates window
-void close();			//Frees media and shuts down SDL
-bool mainMenu();		//Runs the menu loop rather than main game
+//Loads media
+bool loadMedia();
+
+//Frees media and shuts down SDL
+void close();
+
+//Scene sprites
+//SDL_Rect gSpriteClips[4][4];
 
 
 bool init()
@@ -64,7 +65,6 @@ bool init()
 
 		//Create window
 		gWindow = SDL_CreateWindow( "Bunny Game", 0,0/*SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED*/, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-		//SDL_SetWindowFullscreen(gWindow,SDL_WINDOW_FULLSCREEN);
 		if( gWindow == NULL )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -108,23 +108,7 @@ void deathScene()
 		SDL_RenderPresent( gRenderer );
 		SDL_Delay(FRAME_DELAY*2);
 	}
-	cout << "GAME OVER" << endl;
-	SDL_Delay(1000);
 }
-
-void winScene()
-{
-	for(int win=0; win < 80;win++)
-	{
-		SDL_SetRenderDrawColor( gRenderer, 2*win, 80+win, 3*win, 0xFF );
-		SDL_RenderClear( gRenderer );
-		SDL_RenderPresent( gRenderer );
-		SDL_Delay(FRAME_DELAY*2);
-	}
-	cout << "YOU WIN" << endl;
-	SDL_Delay(1000);
-}
-
 
 void close()
 {
@@ -149,31 +133,31 @@ int main( int argc, char* args[] )
 	}
 	else
 	{
-//----------------Create entity arrays----------------//
-	//--------Players--------//
-		int numPlayers = 2;
-		int thisPlayer = 0;
-		HUD hud(1,4,28,48,0);
-		playerSprite player[MAX_PLAYERS] = playerSprite(4,4,72,172,2,1,1,8,20,100,25,1,8);//rows,frames,width,height,gap,x,y,hp,dmg,range,fr,spd,sspd
-		for(int i=0;i<numPlayers;i++)
-		{
-			cout << "Player " << i << " created!" << endl;
-		}
-	//--------Enemies--------//
-		enemySprite enemies[MAX_ENEMIES] = enemySprite(4,4,72,172,2,430,50);
-		for(int ens=0; ens<20;ens++)
-		{
-			enemies[ens].create(0,SCREEN_WIDTH-(100+ens*25),SCREEN_HEIGHT-(200+ens*25),1);
-		}
-	//--------Projectiles--------//
+		//Load media
+		playerSprite player(4,4,72,172,2,1,1);
+		enemySprite enemy1(4,4,72,172,2,430,50);
 		projectileSprite projectiles[MAX_PROJECTILES] = projectileSprite(false,4,4,48,48,2);
+						
+		if( !player.loadMedia() || !enemy1.loadMedia())
+		{
+			printf( "Failed to load media!\n" );
+		}
+		else
+		{	
+			//Set up player Sprite
+			player.generateClips();
+			//Set up enemy Sprite
+			enemy1.generateClips();
+			//Set up projectile Sprite
+			
+			//Main loop flag	
+			bool quit = false;	
+			//Event handler	
+			SDL_Event e;			
+			bool pAction[5] = {false};
 			
 	/*--------------------------------Main Game Loop--------------------------------*/
-			bool quit = false;			//Main loop continutation/quit flag	
-			SDL_Event e;				//Event handler		
-			bool pAction[5] = {false};	//Multi action Handler array
-			
-			
+	
 			while( !quit )
 			{				
 				//Handle events on queue
@@ -198,7 +182,7 @@ int main( int argc, char* args[] )
 									}else if(e.type == SDL_KEYUP)
 									{
 										pAction[0]=false;
-										player[thisPlayer].resetFrame();
+										player.resetFrame();
 									}
 								break;
 								case SDLK_UP:
@@ -208,7 +192,7 @@ int main( int argc, char* args[] )
 									}else if(e.type == SDL_KEYUP)
 									{
 										pAction[1]=false;
-										player[thisPlayer].resetFrame();
+										player.resetFrame();
 									}
 								break;
 								case SDLK_LEFT:
@@ -218,7 +202,7 @@ int main( int argc, char* args[] )
 									}else if(e.type == SDL_KEYUP)
 									{
 										pAction[2]=false;
-										player[thisPlayer].resetFrame();
+										player.resetFrame();
 									}
 								break;
 								case SDLK_RIGHT:
@@ -228,7 +212,7 @@ int main( int argc, char* args[] )
 									}else if(e.type == SDL_KEYUP)
 									{
 										pAction[3]=false;
-										player[thisPlayer].resetFrame();
+										player.resetFrame();
 									}
 								break;
 								case SDLK_SPACE:
@@ -238,7 +222,7 @@ int main( int argc, char* args[] )
 									}else if(e.type == SDL_KEYUP)
 									{
 										pAction[4]=false;
-										player[thisPlayer].resetFrame();
+										player.resetFrame();
 									}
 								default:
 								break;
@@ -251,54 +235,54 @@ int main( int argc, char* args[] )
 				{
 					if(pAction[2]==true||pAction[3]==true)
 					{
-						player[thisPlayer].moveDown(3);
+						player.setY(player.getY() + (3*player.getSpeed()));
 					}else{
-						player[thisPlayer].moveDown(4);
+						player.setY(player.getY() + (4*player.getSpeed()));
 					}
-					player[thisPlayer].selectRow(0);
-					player[thisPlayer].setMoving(true);		
+					player.selectRow(0);
+					player.setMoving(true);		
 				}
 				if(pAction[1]==true)	//move up
 				{
 					if(pAction[2]==true||pAction[3]==true)
 					{
-						player[thisPlayer].moveUp(3);
+						player.setY(player.getY() - (3*player.getSpeed()));
 					}else{
-						player[thisPlayer].moveUp(4);
+						player.setY(player.getY() - (4*player.getSpeed()));
 					}
-					player[thisPlayer].selectRow(1);
-					player[thisPlayer].setMoving(true);
+					player.selectRow(1);
+					player.setMoving(true);
 				}
 				if(pAction[2]==true)	//move left
 				{
 					if(pAction[0]==true||pAction[1]==true)
 					{
-						player[thisPlayer].moveLeft(3);
+						player.setX(player.getX() - (3*player.getSpeed()));
 					}else{
-						player[thisPlayer].moveLeft(4);
+						player.setX(player.getX() - (4*player.getSpeed()));
 					}
-					player[thisPlayer].selectRow(2);
-					player[thisPlayer].setMoving(true);
+					player.selectRow(2);
+					player.setMoving(true);
 				}
 				if(pAction[3]==true)	//move right
 				{
 					if(pAction[0]==true||pAction[1]==true)
 					{
-						player[thisPlayer].moveRight(3);
+						player.setX(player.getX() + (3*player.getSpeed()));
 					}else{
-						player[thisPlayer].moveRight(4);
+						player.setX(player.getX() + (4*player.getSpeed()));
 					}
-					player[thisPlayer].selectRow(3);
-					player[thisPlayer].setMoving(true);
+					player.selectRow(3);
+					player.setMoving(true);
 				}
 				if(pAction[4]==true)	//fire carrot
 				{
 					for(int numproj=0;numproj<MAX_PROJECTILES;numproj++)
 					{
-						if(player[thisPlayer].getProjDelay()<1 && !projectiles[numproj].doesExist())
+						if(!projectiles[numproj].doesExist() && player.getprojDelay()<1)
 						{
-							projectiles[numproj].create(player[thisPlayer].getRow(),player[thisPlayer].getX(),player[thisPlayer].getY()+player[thisPlayer].getHeight()/2,player[thisPlayer].getShotSpeed(),player[thisPlayer].getRange(),player[thisPlayer].getDamage());
-							player[thisPlayer].projDelayStart();
+							projectiles[numproj].create(player.getRow(),player.getX(),player.getY()+player.getHeight()/2);
+							player.projDelayStart(20);
 						}
 					}
 				}
@@ -310,74 +294,41 @@ int main( int argc, char* args[] )
 				SDL_SetRenderDrawColor( gRenderer, 90, 200, 90, 0xFF );
 				SDL_RenderClear( gRenderer );
 				//Process Player
-				if(player[thisPlayer].isMoving()==true)
-					player[thisPlayer].pushNextFrame();
-				player[thisPlayer].setMoving(false);
-				player[thisPlayer].render();
-				player[thisPlayer].stateIncrement();
+				if(player.isMoving()==true)
+					player.pushNextFrame();
+				player.setMoving(false);
+				SDL_Rect temp = player.getClip();
+				player.gSpriteSheetTexture.render( player.getX(), player.getY(), &temp );
+				player.projDelayIncrement();
+				player.checkCollision(enemy1.getX(),enemy1.getY(),enemy1.getWidth(),enemy1.getHeight());
+				//Process Enemies
+				enemy1.behaviourPassive();
+				SDL_Rect temp2 = enemy1.getClip();
+				enemy1.gSpriteSheetTexture.render( enemy1.getX(), enemy1.getY(), &temp2 );
+				//Process Projectiles
 				
-
-//----------------Process Enemies----------------//			
-				int currentEnemies = 0;
-				bool playerHit = false;
-				int damageCounter = 0;
-				for(int encount = 0;encount<MAX_ENEMIES;encount++)
-				{
-					if(enemies[encount].doesExist())
-					{	
-						currentEnemies++;
-						enemies[encount].behaviourPassive();
-						if(player[thisPlayer].getHitDelay()<1 && player[thisPlayer].checkCollision(enemies[encount].getX(),enemies[encount].getY(),enemies[encount].getWidth(),enemies[encount].getHeight())==true)
-						{
-							playerHit=true;
-							damageCounter=enemies[encount].getDamage();
-						}
-						enemies[encount].render();
-					}	
-				}
-				if(playerHit==true)
-				{
-					player[thisPlayer].damagePlayer(damageCounter);
-					player[thisPlayer].hitDelayStart();
-				}
-				
-//----------------Process Projectiles----------------//
-				
-					for(int projcount=0;projcount<MAX_PROJECTILES;projcount++)
-					{	
-						if(projectiles[projcount].doesExist())
-						{
-							for(int encount = 0;encount<MAX_ENEMIES;encount++)
-							{
-								if(enemies[encount].doesExist())
-								{
-									if(projectiles[projcount].checkCollision(enemies[encount].getX(),enemies[encount].getY(),enemies[encount].getWidth(),enemies[encount].getHeight())==true)
-										enemies[encount].damageEnemy(player[thisPlayer].getDamage());
-								}
-							}
-							projectiles[projcount].advance();
-							SDL_Rect projtemp = projectiles[projcount].getClip();
-							projectiles[projcount].gSpriteSheetTexture.render( projectiles[projcount].getX(), projectiles[projcount].getY(), &projtemp );
-						}
+				for(int projcount=0;projcount<MAX_PROJECTILES;projcount++)
+				{	
+					if(projectiles[projcount].doesExist())
+					{
+						//projectiles[projcount].advance();
+						projectiles[projcount].checkCollision(enemy1.getX(),enemy1.getY(),enemy1.getWidth(),enemy1.getHeight());
+						projectiles[projcount].advance();
+						SDL_Rect projtemp = projectiles[projcount].getClip();
+						projectiles[projcount].gSpriteSheetTexture.render( projectiles[projcount].getX(), projectiles[projcount].getY(), &projtemp );
 					}
-//----------------Process HUD----------------//
-	hud.drawHealth(player[thisPlayer].getHealth(), player[thisPlayer].getMaxHealth());
-
+				}
 				//Update screen
 				SDL_RenderPresent( gRenderer );
 				SDL_Delay(FRAME_DELAY);
-				if(player[thisPlayer].getHealth() == 0)
+				if(player.getHealth() == 0)
 				{
 					quit=true;
 					deathScene();
 				}
-				if(currentEnemies==0)
-				{
-					quit=true;
-					winScene();
-				}
 			}
 	/*--------------------------------End Main Game Loop--------------------------------*/		
+		}
 	}
 	//Free loaded images
 	//player.gSpriteSheetTexture.free();
