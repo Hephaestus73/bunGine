@@ -62,7 +62,7 @@ projectileSprite::projectileSprite(bool ex, int rows, int frames, int w, int h, 
 	maxY=SCREEN_HEIGHT-fHeight;
 	loadMedia();
 	generateClips();
-	cout << "Sprite has been created with " << rows << " rows and " << frames << " frames." << endl;
+	//cout << "Sprite has been created with " << rows << " rows and " << frames << " frames." << endl;
 }
 //--------Check if this projectile exists (for array purposes)
 bool projectileSprite::doesExist()

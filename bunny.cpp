@@ -14,14 +14,15 @@ const int SCREEN_HEIGHT = 800;
 const int MAX_PROJECTILES = 50;
 const int MAX_ENEMIES = 50;
 const int MAX_PLAYERS = 2;
-const int FRAME_DELAY = 15; //in ms
+//const int FRAME_DELAY = 15; //in ms
 
 
 #include "libs/LTexture.h"
 #include "libs/playerSprite.h"
 #include "libs/enemySprite.h"
 #include "libs/projectileSprite.h"
-#include "libs/HUD.h"
+#include "libs/HUDSprite.h"
+#include "libs/fireworkSprite.h"
 
 
 
@@ -64,7 +65,9 @@ bool init()
 
 		//Create window
 		gWindow = SDL_CreateWindow( "Bunny Game", 0,0/*SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED*/, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-		//SDL_SetWindowFullscreen(gWindow,SDL_WINDOW_FULLSCREEN);
+		bool full=false;
+		if(full==true)
+			SDL_SetWindowFullscreen(gWindow,SDL_WINDOW_FULLSCREEN);
 		if( gWindow == NULL )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -106,7 +109,7 @@ void deathScene()
 		SDL_SetRenderDrawColor( gRenderer, 240 - 3*death, 80-death, 80-death, 0xFF );
 		SDL_RenderClear( gRenderer );
 		SDL_RenderPresent( gRenderer );
-		SDL_Delay(FRAME_DELAY*2);
+		SDL_Delay(32);
 	}
 	cout << "GAME OVER" << endl;
 	SDL_Delay(1000);
@@ -114,12 +117,32 @@ void deathScene()
 
 void winScene()
 {
-	for(int win=0; win < 80;win++)
+	
+	//size of fireworks array
+	int numFireworks=10;
+	fireworkSprite firework[numFireworks] = fireworkSprite();
+	
+	for(int j=0; j<400; j++)
 	{
-		SDL_SetRenderDrawColor( gRenderer, 2*win, 80+win, 3*win, 0xFF );
+		SDL_SetRenderDrawColor( gRenderer, 90, 200, 90, 0xFF );
 		SDL_RenderClear( gRenderer );
+		
+		for(int i=0;i<numFireworks;i++)
+		{
+			if(firework[i].doesExist()==true)
+			{	
+				firework[i].advance();
+				firework[i].render();
+			}else
+			{
+				if((rand() % 10) > 8)
+				{
+					firework[i].create();
+				}
+			}
+		}
 		SDL_RenderPresent( gRenderer );
-		SDL_Delay(FRAME_DELAY*2);
+		cout << "j = " << j << endl;
 	}
 	cout << "YOU WIN" << endl;
 	SDL_Delay(1000);
@@ -160,8 +183,9 @@ int main( int argc, char* args[] )
 			cout << "Player " << i << " created!" << endl;
 		}
 	//--------Enemies--------//
+		int genEns=1; //how many enemies to generate
 		enemySprite enemies[MAX_ENEMIES] = enemySprite(4,4,72,172,2,430,50);
-		for(int ens=0; ens<20;ens++)
+		for(int ens=0; ens<genEns;ens++)
 		{
 			enemies[ens].create(0,SCREEN_WIDTH-(100+ens*25),SCREEN_HEIGHT-(200+ens*25),1);
 		}
@@ -365,7 +389,7 @@ int main( int argc, char* args[] )
 
 				//Update screen
 				SDL_RenderPresent( gRenderer );
-				SDL_Delay(FRAME_DELAY);
+				//SDL_Delay(FRAME_DELAY);
 				if(player[thisPlayer].getHealth() == 0)
 				{
 					quit=true;
@@ -379,8 +403,6 @@ int main( int argc, char* args[] )
 			}
 	/*--------------------------------End Main Game Loop--------------------------------*/		
 	}
-	//Free loaded images
-	//player.gSpriteSheetTexture.free();
 	//Free resources and close SDL
 	close();
 	return 0;
