@@ -5,7 +5,7 @@ class playerSprite
 {
 	
 	public:
-		playerSprite(int rows, int frames, int w, int h, int gap, int x, int y, int health, int damage, int range, int firerate, int speed, int shotspeed);
+		playerSprite(int rows, int frames, int w, int h, int gap, int x, int y, int mX, int mY, int health, int damage, int range, int firerate, int speed, int shotspeed);
 		void selectRow(int row);
 		int getRow();
 		void pushNextFrame(void);
@@ -20,10 +20,10 @@ class playerSprite
 		void setY(int y);
 		int getX();
 		int getY();
-		void moveDown(int mod);
-		void moveUp(int mod);
-		void moveLeft(int mod);
-		void moveRight(int mod);
+		void moveDown(double mod);
+		void moveUp(double mod);
+		void moveLeft(double mod);
+		void moveRight(double mod);
 		int getWidth();
 		int getHeight();
 		int getMaxHealth();
@@ -53,7 +53,7 @@ class playerSprite
 		int getProjDelay();
 		int setProjDelay();
 		void stateIncrement();
-		void render();
+		void render(int offsetX,int offsetY);
 		
 	private:
 //--------Player Stats
@@ -85,9 +85,10 @@ class playerSprite
 		bool moving;
 		SDL_Rect renderedFrame;
 		SDL_Rect currentClip[4][4];	
+		Mix_Chunk *playerHitSound = NULL; //The sound effects that will be used
 };
 //--------Constructor
-playerSprite::playerSprite(int rows, int frames, int w, int h, int gap, int x, int y, int health, int damage, int range, int firerate, int speed, int shotspeed)
+playerSprite::playerSprite(int rows, int frames, int w, int h, int gap, int x, int y, int mX, int mY, int health, int damage, int range, int firerate, int speed, int shotspeed)
 {
 	maxHP=health;
 	HP=health;
@@ -106,9 +107,9 @@ playerSprite::playerSprite(int rows, int frames, int w, int h, int gap, int x, i
 	fGap=gap;
 	pX=x;
 	pY=y;
-	spriteFrameRate=6;
-	maxX=SCREEN_WIDTH-fWidth;
-	maxY=SCREEN_HEIGHT-fHeight;
+	spriteFrameRate=30/SPD;
+	maxX=mX-fWidth;
+	maxY=mY-fHeight;
 	loadMedia();
 	generateClips();	
 	//cout << "Sprite has been created with " << rows << " rows and " << frames << " frames." << endl;
@@ -121,6 +122,12 @@ bool playerSprite::loadMedia()
 	if( !gSpriteSheetTexture.loadFromFile( "assets/bunnySpriteMap.png" ) )
 	{
 		printf( "Failed to load sprite sheet texture!\n" );
+		success = false;
+	}
+	playerHitSound = Mix_LoadWAV( "sounds/playerhit.wav" );
+	if(playerHitSound == NULL)
+	{
+		printf( "Failed to load sounds\n" );
 		success = false;
 	}
 	return success;
@@ -196,33 +203,33 @@ int	playerSprite::getHeight(){return fHeight;}
 
 
 //--------Move Down
-void playerSprite::moveDown(int mod)
+void playerSprite::moveDown(double mod)
 {
 	if(pY < maxY)
 	{
-		pY=pY+SPD*mod;
+		pY=pY+int((SPD*mod)+0.5);
 	}
 }
-void playerSprite::moveUp(int mod)
+void playerSprite::moveUp(double mod)
 {
 	if(pY > 0)
 	{
-		pY=pY-SPD*mod;
+		pY=pY-int((SPD*mod)+0.5);
 	}
 }
-void playerSprite::moveLeft(int mod)
+void playerSprite::moveLeft(double mod)
 {
 	if(pX > 0)
 	{
-		pX=pX-SPD*mod;
+		pX=pX-int((SPD*mod)+0.5);
 	}
 }
 //--------
-void playerSprite::moveRight(int mod)
+void playerSprite::moveRight(double mod)
 {
 	if(pX < maxX)
 	{
-		pX=pX+SPD*mod;
+		pX=pX+int((SPD*mod)+0.5);
 	}
 }
 //--------Set x position
@@ -291,6 +298,7 @@ bool playerSprite::checkCollision(int eX, int eY, int esizeX, int esizeY)
 void playerSprite::damagePlayer(int dmgamnt)
 {
 	HP = HP-dmgamnt;
+	Mix_PlayChannel( -1, playerHitSound, 0 );
 }
 
 void playerSprite::setProjReady(bool pr)
@@ -329,12 +337,12 @@ int playerSprite::getHitDelay()
 }
 
 //--------Render this Player--------//
-void playerSprite::render()
+void playerSprite::render(int offsetX, int offsetY)
 {
 	//--------Generate tint colour based of sine of hitDelay. This creates a flashing pattern when hit otherwise does not tint
 	double flash = 100* (sin(hitDelay*3.14159265/10));
 	//cout << "Flash = :" << flash << endl;
 	gSpriteSheetTexture.tint(255,255-abs(flash),255-abs(flash));
 	renderedFrame = getClip();
-	gSpriteSheetTexture.render(pX,pY,&renderedFrame);
+	gSpriteSheetTexture.render(pX-offsetX,pY-offsetY,&renderedFrame);
 }

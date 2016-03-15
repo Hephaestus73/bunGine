@@ -1,6 +1,8 @@
 //Using SDL, SDL_image, standard in/out, and strings
-#include "libs/SDL/SDL.h"
-#include "libs/SDL/SDL_image.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_net.h>
 #include <stdio.h>
 #include <string>
 #include <iostream>
@@ -8,13 +10,15 @@
 #include <time.h>
 
 using namespace std;
-//Screen dimension constants
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 800;
+//Settings will later be config LFF
+const int SCREEN_WIDTH = 960;
+const int SCREEN_HEIGHT = 540;
+const bool full=false;
+
+//Array maximums
 const int MAX_PROJECTILES = 50;
 const int MAX_ENEMIES = 50;
 const int MAX_PLAYERS = 2;
-//const int FRAME_DELAY = 15; //in ms
 
 
 #include "libs/LTexture.h"
@@ -23,8 +27,10 @@ const int MAX_PLAYERS = 2;
 #include "libs/projectileSprite.h"
 #include "libs/HUDSprite.h"
 #include "libs/fireworkSprite.h"
+#include "libs/sceneSprite.h"
 
-
+//The music that will be played
+//Mix_Music *gMusic = NULL;
 
 //enumerate possible key presses
 enum KeyPressSurfaces
@@ -50,7 +56,7 @@ bool init()
 	bool success = true;
 
 	//Initialize SDL
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+	if( SDL_Init( SDL_INIT_EVERYTHING ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
@@ -62,10 +68,9 @@ bool init()
 		{
 			printf( "Warning: Linear texture filtering not enabled!" );
 		}
-
 		//Create window
 		gWindow = SDL_CreateWindow( "Bunny Game", 0,0/*SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED*/, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-		bool full=false;
+		
 		if(full==true)
 			SDL_SetWindowFullscreen(gWindow,SDL_WINDOW_FULLSCREEN);
 		if( gWindow == NULL )
@@ -85,9 +90,8 @@ bool init()
 			else
 			{
 				//Initialize renderer color
-				//Initialize renderer color
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-
+				
 				//Initialize PNG loading
 				int imgFlags = IMG_INIT_PNG;
 				if( !( IMG_Init(imgFlags) & imgFlags ) )
@@ -95,10 +99,15 @@ bool init()
 					printf( "SDL_image could not initialize! SDL_image Error1: %s\n", IMG_GetError() );
 					success = false;
 				}
+				 //Initialize SDL_mixer
+                if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
+                {
+                    printf( "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
+                    success = false;
+                }
 			}
 		}
 	}
-
 	return success;
 }
 
@@ -124,7 +133,7 @@ void winScene()
 	
 	for(int j=0; j<400; j++)
 	{
-		SDL_SetRenderDrawColor( gRenderer, 90, 200, 90, 0xFF );
+		SDL_SetRenderDrawColor( gRenderer, 60, 60, 150, 0xFF );
 		SDL_RenderClear( gRenderer );
 		
 		for(int i=0;i<numFireworks;i++)
@@ -135,14 +144,13 @@ void winScene()
 				firework[i].render();
 			}else
 			{
-				if((rand() % 10) > 8)
+				if((rand() % 50) > 48)
 				{
 					firework[i].create();
 				}
 			}
 		}
 		SDL_RenderPresent( gRenderer );
-		cout << "j = " << j << endl;
 	}
 	cout << "YOU WIN" << endl;
 	SDL_Delay(1000);
@@ -165,6 +173,7 @@ void close()
 
 int main( int argc, char* args[] )
 {
+	srand(time(0));
 	//Start up SDL and create window
 	if( !init() )
 	{
@@ -172,25 +181,41 @@ int main( int argc, char* args[] )
 	}
 	else
 	{
+//----------------Set Game loop variables----------------//
+		int spriteOffsetX;
+		int spriteOffsetY;
+		int mapWidth=1536;		//will be dynamic later
+		int mapHeight=1152;		//will be dynamic later
+		
+		int genEns=20; //how many enemies to generate
+		
 //----------------Create entity arrays----------------//
+	//--------Scene effects--------//
+		sceneSprite sceneEffects = sceneSprite(mapWidth,mapHeight);
+
 	//--------Players--------//
-		int numPlayers = 2;
+		int numPlayers = 1;
 		int thisPlayer = 0;
 		HUD hud(1,4,28,48,0);
-		playerSprite player[MAX_PLAYERS] = playerSprite(4,4,72,172,2,1,1,8,20,100,25,1,8);//rows,frames,width,height,gap,x,y,hp,dmg,range,fr,spd,sspd
+		playerSprite player[MAX_PLAYERS] = playerSprite(4,4,72,172,2,1,1,mapWidth,mapHeight,8,20,100,25,6,12);//rows,frames,width,height,gap,x,y,mX,mY,hp,dmg,range,fr,spd,sspd
 		for(int i=0;i<numPlayers;i++)
 		{
 			cout << "Player " << i << " created!" << endl;
 		}
 	//--------Enemies--------//
-		int genEns=1; //how many enemies to generate
-		enemySprite enemies[MAX_ENEMIES] = enemySprite(4,4,72,172,2,430,50);
+		int enX;
+		int enY;
+		enemySprite enemies[MAX_ENEMIES] = enemySprite(4,4,72,172,2,430,50,mapWidth,mapHeight);
 		for(int ens=0; ens<genEns;ens++)
 		{
-			enemies[ens].create(0,SCREEN_WIDTH-(100+ens*25),SCREEN_HEIGHT-(200+ens*25),1);
+			enX = (rand() % (mapWidth-(enemies[ens].getWidth())-200))+200;
+			enY = (rand() % (mapHeight-(enemies[ens].getHeight())-200))+200;
+			cout << "X = " << enX << ", Y = " << enY << endl;
+			//enemies[ens].create(0,SCREEN_WIDTH-(100+ens*25),SCREEN_HEIGHT-(200+ens*25),1);
+			enemies[ens].create(0, enX, enY,1);
 		}
 	//--------Projectiles--------//
-		projectileSprite projectiles[MAX_PROJECTILES] = projectileSprite(false,4,4,48,48,2);
+		projectileSprite projectiles[MAX_PROJECTILES] = projectileSprite(false,4,4,48,48,2,mapWidth,mapHeight);
 			
 	/*--------------------------------Main Game Loop--------------------------------*/
 			bool quit = false;			//Main loop continutation/quit flag	
@@ -275,9 +300,9 @@ int main( int argc, char* args[] )
 				{
 					if(pAction[2]==true||pAction[3]==true)
 					{
-						player[thisPlayer].moveDown(3);
+						player[thisPlayer].moveDown(0.72);
 					}else{
-						player[thisPlayer].moveDown(4);
+						player[thisPlayer].moveDown(1);
 					}
 					player[thisPlayer].selectRow(0);
 					player[thisPlayer].setMoving(true);		
@@ -286,9 +311,9 @@ int main( int argc, char* args[] )
 				{
 					if(pAction[2]==true||pAction[3]==true)
 					{
-						player[thisPlayer].moveUp(3);
+						player[thisPlayer].moveUp(0.72);
 					}else{
-						player[thisPlayer].moveUp(4);
+						player[thisPlayer].moveUp(1);
 					}
 					player[thisPlayer].selectRow(1);
 					player[thisPlayer].setMoving(true);
@@ -297,9 +322,9 @@ int main( int argc, char* args[] )
 				{
 					if(pAction[0]==true||pAction[1]==true)
 					{
-						player[thisPlayer].moveLeft(3);
+						player[thisPlayer].moveLeft(0.72);
 					}else{
-						player[thisPlayer].moveLeft(4);
+						player[thisPlayer].moveLeft(1);
 					}
 					player[thisPlayer].selectRow(2);
 					player[thisPlayer].setMoving(true);
@@ -308,9 +333,9 @@ int main( int argc, char* args[] )
 				{
 					if(pAction[0]==true||pAction[1]==true)
 					{
-						player[thisPlayer].moveRight(3);
+						player[thisPlayer].moveRight(0.72);
 					}else{
-						player[thisPlayer].moveRight(4);
+						player[thisPlayer].moveRight(1);
 					}
 					player[thisPlayer].selectRow(3);
 					player[thisPlayer].setMoving(true);
@@ -329,15 +354,44 @@ int main( int argc, char* args[] )
 				
 
 //----------------PROCESS FRAME----------------//
+	
+	//--------Get Sprite offset (applies to all sprites)--------//			
+				if(player[thisPlayer].getX() < (SCREEN_WIDTH/2) - (player[thisPlayer].getWidth()/2)) //if less than half the screen width
+				{
+					spriteOffsetX = 0;
+				}else if(player[thisPlayer].getX() > (mapWidth-(SCREEN_WIDTH/2)) - (player[thisPlayer].getWidth()/2)) //if more than half screen width from map width
+				{
+					spriteOffsetX = mapWidth - SCREEN_WIDTH;
+				}else{
+					spriteOffsetX = player[thisPlayer].getX() - (SCREEN_WIDTH /2)+(player[thisPlayer].getWidth()/2);
+				}
+				
+				if(player[thisPlayer].getY() < (SCREEN_HEIGHT /2) - (player[thisPlayer].getHeight()/2))//if less than half the screen width
+				{
+					spriteOffsetY = 0;
+				}else if(player[thisPlayer].getY() > mapHeight-(SCREEN_HEIGHT/2) - (player[thisPlayer].getHeight()/2))//if more than half screen width from map width
+				{
+					spriteOffsetY =  mapHeight - SCREEN_HEIGHT;
+				}else{
+					spriteOffsetY = player[thisPlayer].getY() - (SCREEN_HEIGHT /2)+(player[thisPlayer].getHeight()/2);
+				}
+				
+				
+				
+				
 
 				//Clear screen
-				SDL_SetRenderDrawColor( gRenderer, 90, 200, 90, 0xFF );
+				SDL_SetRenderDrawColor( gRenderer, 80, 180, 80, 0xFF );
 				SDL_RenderClear( gRenderer );
-				//Process Player
+				
+//----------------Process Scene----------------//
+				sceneEffects.render(spriteOffsetX, spriteOffsetY);
+
+//----------------Process Player----------------//
 				if(player[thisPlayer].isMoving()==true)
 					player[thisPlayer].pushNextFrame();
 				player[thisPlayer].setMoving(false);
-				player[thisPlayer].render();
+				player[thisPlayer].render(spriteOffsetX,spriteOffsetY);
 				player[thisPlayer].stateIncrement();
 				
 
@@ -356,7 +410,7 @@ int main( int argc, char* args[] )
 							playerHit=true;
 							damageCounter=enemies[encount].getDamage();
 						}
-						enemies[encount].render();
+						enemies[encount].render(spriteOffsetX, spriteOffsetY);
 					}	
 				}
 				if(playerHit==true)
@@ -380,21 +434,24 @@ int main( int argc, char* args[] )
 								}
 							}
 							projectiles[projcount].advance();
-							SDL_Rect projtemp = projectiles[projcount].getClip();
-							projectiles[projcount].gSpriteSheetTexture.render( projectiles[projcount].getX(), projectiles[projcount].getY(), &projtemp );
+							projectiles[projcount].render(spriteOffsetX,spriteOffsetY); 
 						}
 					}
-//----------------Process HUD----------------//
+	//--------Process HUD--------//
 	hud.drawHealth(player[thisPlayer].getHealth(), player[thisPlayer].getMaxHealth());
 
 				//Update screen
-				SDL_RenderPresent( gRenderer );
+				SDL_RenderPresent(gRenderer);
 				//SDL_Delay(FRAME_DELAY);
+				
+	//--------Check if player is dead--------//
+
 				if(player[thisPlayer].getHealth() == 0)
 				{
 					quit=true;
 					deathScene();
 				}
+	//---------Check if all enemies are dead--------//				
 				if(currentEnemies==0)
 				{
 					quit=true;

@@ -9,7 +9,7 @@ CC = g++
 COMPILER_FLAGS = 
 
 #LINKER_FLAGS specifies libraries we're using
-LINKER_FLAGS = -lSDL2 -lSDL2_image
+LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_net
 
 #OBJ_NAME species the name of the executable we want to create
 OBJ_NAME = bunny

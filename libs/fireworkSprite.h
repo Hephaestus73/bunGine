@@ -28,8 +28,8 @@ class fireworkSprite
 		int currentRow;
 		int currentFrame;
 		int spriteFrameRate;
-		
 		SDL_Rect currentClip[1][6];	
+		Mix_Chunk *fireworkSound = NULL;
 };
 	//--------Constructor
 fireworkSprite::fireworkSprite()
@@ -49,6 +49,7 @@ fireworkSprite::fireworkSprite()
 	fGap = 2;
 	loadMedia();
 	generateClips();
+	
 	//cout << "HUD has been created with " << numRows << " rows and " << numFrames << " frames." << endl;
 }
 
@@ -65,6 +66,12 @@ bool fireworkSprite::loadMedia()
 	if( !gSpriteSheetTexture.loadFromFile( "assets/firework.png" ) )
 	{
 		printf( "Failed to load sprite sheet texture!\n" );
+		success = false;
+	}
+	fireworkSound = Mix_LoadWAV( "sounds/hit.wav" );
+	if(fireworkSound == NULL)
+	{
+		printf( "Failed to load sounds\n" );
 		success = false;
 	}
 	return success;
@@ -95,20 +102,27 @@ SDL_Rect fireworkSprite::getClip()
 void fireworkSprite::create()
 {
 	exists = true;
+	Mix_PlayChannel( -1, fireworkSound, 0 );
 	TTL = numFrames*spriteFrameRate;
 	fX = rand() % maxX + 1; 
 	fY = rand() % maxY + 1;
-	tint = rand() % 3 + 1;
+	tint = rand() % 6 ;
 	switch(tint)
 	{
-		case 1: gSpriteSheetTexture.tint(255,50,50);
+		case 0: gSpriteSheetTexture.tint(255,50,50);
 		break;
-		case 2: gSpriteSheetTexture.tint(50,255,50);
+		case 1: gSpriteSheetTexture.tint(50,255,50);
 		break;
-		case 3: gSpriteSheetTexture.tint(50,50,255);
+		case 2: gSpriteSheetTexture.tint(50,50,255);
+		break;
+		case 3: gSpriteSheetTexture.tint(255,255,50);
+		break;
+		case 4: gSpriteSheetTexture.tint(50,255,255);
+		break;
+		case 5: gSpriteSheetTexture.tint(255,50,255);
 		break;
 	}
-	cout << "Created firework at (X = " << fX << ", Y = " << fY << ")" << endl;
+	//cout << "Created firework at (X = " << fX << ", Y = " << fY << ")" << endl;
 }
 
 void fireworkSprite::advance()
@@ -117,7 +131,6 @@ void fireworkSprite::advance()
 		destroy();
 	else
 	{
-		cout << "TTL = " << TTL << endl;
 		currentFrame=int(6-(TTL/spriteFrameRate));
 		TTL--;
 	}

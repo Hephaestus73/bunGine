@@ -1,10 +1,10 @@
 //#include <iostream>
 //using namespace std;
 
-class enemySprite
+class tileSprite
 {
 	public:
-		enemySprite(int rows, int frames, int w, int h, int gap, int x, int y, int mX, int mY);
+		tileSprite(int rows, int frames, int w, int h, int gap, int x, int y);
 		void selectRow(int row);
 		void pushNextFrame(void);
 		void resetFrame(void);
@@ -29,13 +29,14 @@ class enemySprite
 		bool doesExist();
 		void damageEnemy(int dmg);
 		void behaviourPassive(void);
-		void render(int offsetX, int offsetY);
+		void render();
 		
 	private:
 	//----Enemy Stats
 		int DMG;
 		int health;
-		int SPD;
+		int SPD;	
+			
 		bool allowedMove;
 		int move;
 		int dir;
@@ -58,7 +59,7 @@ class enemySprite
 		SDL_Rect currentClip[4][4];	
 };
 //--------Constructor
-enemySprite::enemySprite(int rows, int frames, int w, int h, int gap, int x, int y, int mX, int mY)
+tileSprite::tileSprite(int rows, int frames, int w, int h, int gap, int x, int y)
 {
 	exists = false;
 	currentRow=0;
@@ -85,12 +86,12 @@ enemySprite::enemySprite(int rows, int frames, int w, int h, int gap, int x, int
 	//cout << "Sprite has been created with " << rows << " rows and " << frames << " frames." << endl;
 }
 //--------Check if the enemy exists
-bool enemySprite::doesExist()
+bool tileSprite::doesExist()
 {
 	return exists;
 }
 //--------Create enemy
-void enemySprite::create(int dir, int x, int y, int dmg)
+void tileSprite::create(int dir, int x, int y, int dmg)
 {
 	exists=true;
 	health=100;
@@ -101,13 +102,13 @@ void enemySprite::create(int dir, int x, int y, int dmg)
 	pY=y;
 }
 
-bool enemySprite::loadMedia()
+bool tileSprite::loadMedia()
 {
 	//Loading success flag
 	bool success = true;
 
 	//Load sprite sheet texture
-	if( !gSpriteSheetTexture.loadFromFile( "assets/enemySpriteMap.png" ) )
+	if( !gSpriteSheetTexture.loadFromFile( "assets/tileSprite.png" ) )
 	{
 		printf( "Failed to load sprite sheet texture!\n" );
 		success = false;
@@ -115,7 +116,7 @@ bool enemySprite::loadMedia()
 	return success;
 }
 //--------Create clips from spritemap
-void enemySprite::generateClips()
+void tileSprite::generateClips()
 {
 	for(int i=0;i<numRows;i++)
 	{
@@ -125,22 +126,23 @@ void enemySprite::generateClips()
 			currentClip[i][j].y = (i*(fHeight+fGap));
 			currentClip[i][j].w = fWidth;
 			currentClip[i][j].h = fHeight;
+			
 			//cout << "Generated clip (" << i << "," << j << ") at (" << currentClip[i][j].x << "," << currentClip[i][j].y <<")" << endl;
 		}
 	}
 }
 //--------Get currently selected clip
-SDL_Rect enemySprite::getClip()
+SDL_Rect tileSprite::getClip()
 {
 	return currentClip[currentRow][currentFrame/spriteFrameRate];
 }
 //--------Set the row (direction) of sprite
-void enemySprite::selectRow(int row)
+void tileSprite::selectRow(int row)
 {
 	currentRow=row;
 }
 //--------Advance to next frame in row
-void enemySprite::pushNextFrame()
+void tileSprite::pushNextFrame()
 {
 	if(currentFrame>=spriteFrameRate*(numFrames)-1)
 	{
@@ -152,36 +154,36 @@ void enemySprite::pushNextFrame()
 	}
 }
 //--------Set frame back to start
-void enemySprite::resetFrame()
+void tileSprite::resetFrame()
 {
 	currentFrame=0;
 }
 //--------Set if moving or not
-void enemySprite::setMoving(bool setMovingTo)
+void tileSprite::setMoving(bool setMovingTo)
 {
 	moving = setMovingTo;
 }
 //----------------Enemy GETS----------------//
 
 //--------Get Enemy Health
-int enemySprite::getHealth(){return health;}
+int tileSprite::getHealth(){return health;}
 //--------Get Enemy Damage
-int enemySprite::getDamage(){return DMG;}
+int tileSprite::getDamage(){return DMG;}
 
 //--------Check if moving or not
-bool enemySprite::isMoving(void){return moving;}
+bool tileSprite::isMoving(void){return moving;}
 //--------Get x position
-int enemySprite::getX(){return pX;}
+int tileSprite::getX(){return pX;}
 //--------Get y position
-int enemySprite::getY(){return pY;}
+int tileSprite::getY(){return pY;}
 //--------Get width
-int enemySprite::getWidth(){return fWidth;}
+int tileSprite::getWidth(){return fWidth;}
 //--------Get height
-int	enemySprite::getHeight(){return fHeight;}
+int	tileSprite::getHeight(){return fHeight;}
 //--------Get enemy speed
-int enemySprite::getSpeed(){return SPD;}
+int tileSprite::getSpeed(){return SPD;}
 //--------Set x position
-void enemySprite::setX(int x)
+void tileSprite::setX(int x)
 {
 	if(0 < x && x < maxX)
 	{
@@ -189,7 +191,7 @@ void enemySprite::setX(int x)
 	}
 }
 //--------set y position
-void enemySprite::setY(int y)
+void tileSprite::setY(int y)
 {
 	if(0 < y && y < maxY)
 	{
@@ -197,11 +199,11 @@ void enemySprite::setY(int y)
 	}
 }
 //--------Get enemy speed
-void enemySprite::setSpeed(int s)
+void tileSprite::setSpeed(int s)
 {
 		SPD = s;
 }
-void enemySprite::damageEnemy(int dmg)
+void tileSprite::damageEnemy(int dmg)
 {
 	health = health - dmg;
 	if(health <=0)
@@ -214,13 +216,13 @@ void enemySprite::damageEnemy(int dmg)
 	}
 }
 //--------Destroy enemy
-int enemySprite::destroy()
+int tileSprite::destroy()
 {
 	exists=false;
 	cout << "Enemy Destroyed" << endl;
 }
 
-void enemySprite::behaviourPassive()
+void tileSprite::behaviourPassive()
 {
 	if(hitTimer>0)
 		hitTimer--;
@@ -264,11 +266,10 @@ void enemySprite::behaviourPassive()
 		}
 	}
 }
-//----Renderer----//
-void enemySprite::render(int offsetX, int offsetY)
+void tileSprite::render()
 {
 	int flash = hitTimer*20;
 	gSpriteSheetTexture.tint(255,255-flash,255-flash);
 	renderedFrame = getClip();
-	gSpriteSheetTexture.render(pX - offsetX,pY-offsetY,&renderedFrame);
+	gSpriteSheetTexture.render(pX,pY,&renderedFrame);
 }

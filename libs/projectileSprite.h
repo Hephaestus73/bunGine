@@ -1,7 +1,7 @@
 class projectileSprite
 {
 	public:
-		projectileSprite(bool ex = false, int rows = 0, int frames = 0, int w = 0, int h = 0, int gap = 0);
+		projectileSprite(bool ex = false, int rows=0, int frames=0, int w=0, int h=0, int gap=0, int mX=0, int mY=0);
 		SDL_Rect getClip(void);
 		LTexture gSpriteSheetTexture;
 		bool loadMedia();
@@ -21,6 +21,7 @@ class projectileSprite
 		void resetFrame(void);
 		bool destroy(void);
 		void advance(void);
+		void render(int offsetX, int offsetY);
 		
 		
 	private:
@@ -41,10 +42,13 @@ class projectileSprite
 		int fWidth;
 		int fHeight;
 		int fGap;
+		SDL_Rect renderedFrame;
 		SDL_Rect currentClip[4][4];	
+		Mix_Chunk *shotSound = NULL; //The sound effects that will be used
+		Mix_Chunk *hitSound = NULL;
 };
 	//--------Constructor
-projectileSprite::projectileSprite(bool ex, int rows, int frames, int w, int h, int gap)
+projectileSprite::projectileSprite(bool ex, int rows, int frames, int w, int h, int gap, int mX, int mY)
 {
 	//static
 	exists = false;
@@ -58,8 +62,8 @@ projectileSprite::projectileSprite(bool ex, int rows, int frames, int w, int h, 
 	fHeight=h;
 	fGap=gap;
 
-	maxX=SCREEN_WIDTH-fWidth;
-	maxY=SCREEN_HEIGHT-fHeight;
+	maxX=mX-fWidth;
+	maxY=mY-fHeight;
 	loadMedia();
 	generateClips();
 	//cout << "Sprite has been created with " << rows << " rows and " << frames << " frames." << endl;
@@ -81,6 +85,7 @@ void projectileSprite::create(int dir, int x, int y,int speed,int range,int dama
 	SPD=speed;
 	TTL=range;
 	DMG=damage;
+	Mix_PlayChannel( -1, shotSound, 0 );
 }
 
 bool projectileSprite::loadMedia()
@@ -92,6 +97,13 @@ bool projectileSprite::loadMedia()
 	if( !gSpriteSheetTexture.loadFromFile( "assets/carrot.png" ) )
 	{
 		printf( "Failed to load sprite sheet texture!\n" );
+		success = false;
+	}
+	shotSound = Mix_LoadWAV( "sounds/shot.wav" );
+	hitSound = Mix_LoadWAV( "sounds/hit.wav" );
+	if(shotSound == NULL || hitSound == NULL)
+	{
+		printf( "Failed to load sounds\n" );
 		success = false;
 	}
 	return success;
@@ -235,7 +247,8 @@ bool projectileSprite::checkCollision(int eX, int eY, int esizeX, int esizeY)
 		//cout << "checking projectile: " << pX << " - " << pX + fWidth << " in enemy " << eX << " - " << eX + esizeX << endl;
 		if((((pX+fWidth) > eX) && (pX < (eX+esizeX))) &&  (((pY+fHeight)>eY) &&(pY<(eY+esizeY))))
 		{	
-			cout << "Carrot Hit!" << endl;
+			//cout << "Carrot Hit!" << endl;
+				Mix_PlayChannel( -1, hitSound, 0 );
 			splatState=1;
 			return true;
 		}
@@ -245,3 +258,11 @@ bool projectileSprite::checkCollision(int eX, int eY, int esizeX, int esizeY)
 	}
 	return false;
 }
+
+//----Renderer----//
+void projectileSprite::render(int offsetX, int offsetY)
+{
+	renderedFrame = getClip();
+	gSpriteSheetTexture.render(pX - offsetX,pY-offsetY,&renderedFrame);
+}
+

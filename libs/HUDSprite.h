@@ -93,7 +93,7 @@ SDL_Rect HUD::getClip()
 void HUD::drawHealth(int hp,int mhp)
 {
 	//cout << "Max HP = " << mhp << ", frame width = " << fWidth << ", current hp = " << hp << endl;
-	hX=(maxX-(mhp*fWidth))/2;
+	hX= (maxX - ((mhp + 2)* fWidth))/2;
 	hY=20;
 	for(int i=0;i<mhp;i++)
 	{
